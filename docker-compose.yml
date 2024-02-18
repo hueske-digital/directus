@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  cache:
+    image: redis:7
+
+  app:
+    image: directus/directus:10
+    volumes:
+      - uploads:/directus/uploads
+      # If you want to load extensions from the host
+      # - ./extensions:/directus/extensions
+    depends_on:
+      - cache
+    restart: unless-stopped
+    environment:
+      KEY:
+      SECRET:
+
+      DB_CLIENT:
+      DB_HOST:
+      DB_PORT:
+      DB_DATABASE:
+      DB_USER:
+      DB_PASSWORD:
+
+      ADMIN_EMAIL:
+      ADMIN_PASSWORD:
+
+      PUBLIC_URL:
+
+      CACHE_ENABLED: "true"
+      CACHE_STORE: "redis"
+      REDIS: "redis://cache:6379"
+    networks:
+      default:
+      proxy_apps:
+    labels:
+      com.centurylinklabs.watchtower.lifecycle.post-update: "npx directus database migrate:latest"
+
+volumes:
+  uploads:
+
+networks:
+  proxy_apps:
+    name: proxy_apps
+    external: true
