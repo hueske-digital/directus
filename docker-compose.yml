@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   cache:
-    image: redis:7
+    image: redis:7-alpine
 
   app:
     image: directus/directus:10
