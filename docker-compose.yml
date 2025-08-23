@@ -1,44 +1,78 @@
-version: "3.8"
 services:
-  cache:
-    image: redis:7-alpine
-
   app:
-    image: directus/directus:10
-    volumes:
-      - uploads:/directus/uploads
-      # If you want to load extensions from the host
-      # - ./extensions:/directus/extensions
-    depends_on:
-      - cache
+    image: directus/directus:${DIRECTUS_VERSION:-latest}
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
     environment:
-      KEY:
-      SECRET:
-
-      DB_CLIENT:
-      DB_HOST:
-      DB_PORT:
-      DB_DATABASE:
-      DB_USER:
-      DB_PASSWORD:
-
-      ADMIN_EMAIL:
-      ADMIN_PASSWORD:
-
-      PUBLIC_URL:
-
-      CACHE_ENABLED: "true"
-      CACHE_STORE: "redis"
-      REDIS: "redis://cache:6379"
+      - SECRET
+      - ADMIN_EMAIL
+      - ADMIN_PASSWORD
+      - PUBLIC_URL
+      - TZ=Europe/Berlin
+      - DB_CLIENT=pg
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=directus
+      - DB_USER=directus
+      - DB_PASSWORD=directus
+      - CACHE_STORE=redis
+      - CACHE_ENABLED=true
+      - CACHE_AUTO_PURGE=true
+      - REDIS=redis://cache:6379
+      - TELEMETRY=false
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+    volumes:
+      - app_uploads:/directus/uploads
+      - app_extensions:/directus/extensions
     networks:
-      default:
       proxy_apps:
+      default:
     labels:
       com.centurylinklabs.watchtower.lifecycle.post-update: "npx directus database migrate:latest"
 
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=directus
+      - POSTGRES_PASSWORD=directus
+      - POSTGRES_DB=directus
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      default:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 1m
+      timeout: 10s
+      start_period: 10s
+      retries: 6
+    labels:
+      - ofelia.restart=true
+      - ofelia.enabled=true
+      - "ofelia.job-exec.${COMPOSE_PROJECT_NAME}dbbackup.schedule=0 0 1 * * *"
+      - "ofelia.job-exec.${COMPOSE_PROJECT_NAME}dbbackup.command=sh -c 'pg_dumpall -U directus -f /var/lib/postgresql/data/backup.sql'"
+    
+  cache:
+    image: redis:alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "[ $$(redis-cli ping) = 'PONG' ]"]
+      interval: 1m
+      timeout: 10s
+      start_period: 10s
+      retries: 6
+    networks:
+      default:
+
 volumes:
-  uploads:
+  app_uploads:
+  app_extensions:
+  db_data:
 
 networks:
   proxy_apps:
