@@ -35,7 +35,7 @@ services:
       com.centurylinklabs.watchtower.lifecycle.post-update: "npx directus database migrate:latest"
 
   db:
-    image: postgres:17-alpine
+    image: pgautoupgrade:latest
     restart: unless-stopped
     environment:
       - POSTGRES_USER=directus
