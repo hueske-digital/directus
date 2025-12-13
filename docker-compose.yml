@@ -42,7 +42,7 @@ services:
       - POSTGRES_PASSWORD=directus
       - POSTGRES_DB=directus
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
     networks:
       default:
     healthcheck:
