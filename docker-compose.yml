@@ -25,6 +25,8 @@ services:
       - REDIS=redis://cache:6379
       - TELEMETRY=false
       - LOG_LEVEL=${LOG_LEVEL:-warn}
+      - ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION=12000
+      - ASSETS_TRANSFORM_TIMEOUT=15000ms
     volumes:
       - app_uploads:/directus/uploads
       - app_extensions:/directus/extensions
