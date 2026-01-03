@@ -28,12 +28,15 @@ services:
       - ASSETS_TRANSFORM_IMAGE_MAX_DIMENSION=12000
       - ASSETS_TRANSFORM_TIMEOUT=15000ms
       - EXTENSIONS_AUTO_RELOAD=true
+      - CADDY_DOMAIN=${CADDY_DOMAIN}
+      - CADDY_TYPE=${CADDY_TYPE:-external}
+      - CADDY_PORT=${CADDY_PORT:-8055}
     volumes:
       - app_uploads:/directus/uploads
       - app_extensions:/directus/extensions
     networks:
-      proxy_apps:
-      default:
+      - caddy
+      - default
     labels:
       com.centurylinklabs.watchtower.lifecycle.post-update: "npx directus database migrate:latest"
 
@@ -78,6 +81,4 @@ volumes:
   db_data:
 
 networks:
-  proxy_apps:
-    name: proxy_apps
-    external: true
+  caddy:
